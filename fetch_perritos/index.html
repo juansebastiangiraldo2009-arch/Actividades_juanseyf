@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dog API – Razas</title>
+<style>
+  :root{--bg:#fff;--fg:#222;--muted:#777;--accent:#e8473f;--card:#f4f4f4;--line:#ddd}
+  @media (prefers-color-scheme:dark){:root{--bg:#1b1b1b;--fg:#eee;--muted:#aaa;--card:#2a2a2a;--line:#3a3a3a}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+  header{padding:20px;text-align:center;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:1.6rem}
+  header p{margin:6px 0 0;color:var(--muted)}
+  .breeds{display:flex;flex-wrap:wrap;gap:6px;padding:16px;max-height:170px;overflow-y:auto;border-bottom:1px solid var(--line)}
+  .breeds button{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:5px 10px;border-radius:999px;cursor:pointer;font-size:.85rem}
+  .breeds button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  h2{margin:16px;font-size:1.2rem;text-transform:capitalize}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:0 16px 30px}
+  .cell{position:relative;aspect-ratio:1;background:var(--card);border-radius:8px;overflow:hidden;cursor:pointer}
+  .cell img{width:100%;height:100%;object-fit:cover;display:block}
+  .cell .fetch{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 22px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 2px 10px #0006}
+  .cell.show .fetch{display:block}
+  .cell.show img{filter:brightness(.55)}
+  .cell.loading img{opacity:.4}
+  #msg{padding:20px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐶 Dog API – Razas</h1>
+  <p>Elige una raza: se cargan 50 fotos. Haz clic en una foto y pulsa «Fetch!» para cambiarla por otra de la misma raza.</p>
+</header>
+<nav class="breeds" id="breeds"></nav>
+<h2 id="title"></h2>
+<div id="msg">Cargando razas…</div>
+<main class="grid" id="grid"></main>
+
+<script>
+const API = "https://dog.ceo/api";
+const $ = id => document.getElementById(id);
+let current = "";
+
+async function getJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function init(){
+  try{
+    const {message} = await getJSON(API + "/breeds/list/all");
+    const list = [];
+    for(const [b, subs] of Object.entries(message)){
+      if(subs.length) subs.forEach(s => list.push({path: b + "/" + s, label: s + " " + b}));
+      else list.push({path: b, label: b});
+    }
+    $("breeds").innerHTML = "";
+    list.forEach(({path, label}) => {
+      const btn = document.createElement("button");
+      btn.textContent = label;
+      btn.onclick = () => selectBreed(path, label, btn);
+      $("breeds").appendChild(btn);
+    });
+    $("msg").textContent = "Selecciona una raza.";
+    const first = $("breeds").firstChild;
+    if(first) first.click();
+  }catch(e){ $("msg").textContent = "No se pudo cargar la lista de razas."; }
+}
+
+async function selectBreed(path, label, btn){
+  current = path;
+  document.querySelectorAll(".breeds button.on").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+  $("title").textContent = label;
+  $("grid").innerHTML = "";
+  $("msg").textContent = "Cargando imágenes…";
+  try{
+    const {message} = await getJSON(`${API}/breed/${path}/images/random/50`);
+    if(path !== current) return;
+    $("msg").textContent = "";
+    message.forEach(url => $("grid").appendChild(makeCell(url, path)));
+  }catch(e){ $("msg").textContent = "Error al cargar las imágenes."; }
+}
+
+function makeCell(url, path){
+  const cell = document.createElement("div");
+  cell.className = "cell";
+  const img = document.createElement("img");
+  img.src = url; img.loading = "lazy"; img.alt = path;
+  const btn = document.createElement("button");
+  btn.className = "fetch"; btn.textContent = "Fetch!";
+  cell.append(img, btn);
+
+  cell.onclick = () => {
+    document.querySelectorAll(".cell.show").forEach(c => c !== cell && c.classList.remove("show"));
+    cell.classList.toggle("show");
+  };
+  btn.onclick = async e => {
+    e.stopPropagation();
+    cell.classList.add("loading");
+    try{
+      const {message} = await getJSON(`${API}/breed/${path}/images/random`);
+      img.src = message;
+      await img.decode().catch(() => {});
+    }catch(err){}
+    cell.classList.remove("loading","show");
+  };
+  return cell;
+}
+
+init();
+</script>
+</body>
+</html>
