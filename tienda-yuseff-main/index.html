@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Productos</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-rose-100 min-h-screen">
+
+    <!-- Encabezado -->
+    <header class="bg-rose-300 py-6 shadow-md">
+        <h1 class="text-center text-3xl font-mono font-bold text-rose-900">
+            VENTA DE PRODUCTOS
+        </h1>
+        <p class="text-center text-rose-800 mt-2">
+            Encuentra tus productos favoritos
+        </p>
+    </header>
+
+    <section class="text-center py-8">
+        <h2 class="text-2xl font-bold text-gray-800">
+            Nuestros productos
+        </h2>
+        <p class="text-gray-600 mt-2">
+            Calidad y estilo al mejor precio
+        </p>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-6 pb-12">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden
+                        hover:shadow-2xl hover:-translate-y-2
+                        transition duration-300">
+
+                <img src="assets/labial.jpg"
+                    alt="Labial"
+                    class="w-full h-56 object-contain p-4">
+
+                <div class="p-5 text-center">
+                    <h3 class="text-xl font-bold text-gray-800">
+
+                    </h3>
+
+                    <p class="text-rose-600 text-2xl font-bold mt-3">
+                        $15.000
+                    </p>
+
+                    <p class="text-gray-500 text-sm mt-2">
+                        Dale color y estilo a tus labios.
+                    </p>
+
+                    <button
+                        onclick="comprar('LABIAL', 15000)"
+                        class="bg-rose-500 text-white px-6 py-2 rounded-lg
+                            mt-4 hover:bg-rose-700 transition">
+                        Comprar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto 2 -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden
+                        hover:shadow-2xl hover:-translate-y-2
+                        transition duration-300">
+
+                <img src="assets/lentes.jpeg"
+                    alt="Lentes de sol"
+                    class="w-full h-56 object-contain p-4">
+
+                <div class="p-5 text-center">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        LENTES DE SOL
+                    </h3>
+
+                    <p class="text-rose-600 text-2xl font-bold mt-3">
+                        $35.000
+                    </p>
+
+                    <p class="text-gray-500 text-sm mt-2">
+                        Protege tus ojos con estilo.
+                    </p>
+
+                    <button
+                        onclick="comprar('LENTES DE SOL', 35000)"
+                        class="bg-rose-500 text-white px-6 py-2 rounded-lg
+                            mt-4 hover:bg-rose-700 transition">
+                        Comprar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto 3 -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden
+                        hover:shadow-2xl hover:-translate-y-2
+                        transition duration-300">
+
+                <img src="assets/tenis.jpg"
+                    alt="Tenis deportivos"
+                    class="w-full h-56 object-contain p-4">
+
+                <div class="p-5 text-center">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        TENIS
+                    </h3>
+
+                    <p class="text-rose-600 text-2xl font-bold mt-3">
+                        $120.000
+                    </p>
+
+                    <p class="text-gray-500 text-sm mt-2">
+                        Comodidad para todos tus días.
+                    </p>
+
+                    <button
+                        onclick="comprar('TENIS', 120000)"
+                        class="bg-rose-500 text-white px-6 py-2 rounded-lg
+                            mt-4 hover:bg-rose-700 transition">
+                        Comprar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Producto 4 -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden
+                        hover:shadow-2xl hover:-translate-y-2
+                        transition duration-300">
+
+                <img src="assets/termito.jpeg"
+                    alt="Termo"
+                    class="w-full h-56 object-contain p-4">
+
+                <div class="p-5 text-center">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        TERMO
+                    </h3>
+
+                    <p class="text-rose-600 text-2xl font-bold mt-3">
+                        $45.000
+                    </p>
+
+                    <p class="text-gray-500 text-sm mt-2">
+                        Mantén tus bebidas a la temperatura ideal.
+                    </p>
+
+                    <button
+                        onclick="comprar('TERMO', 45000)"
+                        class="bg-rose-500 text-white px-6 py-2 rounded-lg
+                            mt-4 hover:bg-rose-700 transition">
+                        Comprar
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-rose-300 text-center py-5">
+        <p class="text-rose-900 font-semibold">
+            Venta de Productos - Isabella Arboleda
+        </p>
+    </footer>
+
+</body>
+</html>
