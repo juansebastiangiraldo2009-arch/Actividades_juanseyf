@@ -1,116 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dog API – Razas</title>
-<style>
-  :root{--bg:#fff;--fg:#222;--muted:#777;--accent:#e8473f;--card:#f4f4f4;--line:#ddd}
-  @media (prefers-color-scheme:dark){:root{--bg:#1b1b1b;--fg:#eee;--muted:#aaa;--card:#2a2a2a;--line:#3a3a3a}}
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--fg)}
-  header{padding:20px;text-align:center;border-bottom:1px solid var(--line)}
-  header h1{margin:0;font-size:1.6rem}
-  header p{margin:6px 0 0;color:var(--muted)}
-  .breeds{display:flex;flex-wrap:wrap;gap:6px;padding:16px;max-height:170px;overflow-y:auto;border-bottom:1px solid var(--line)}
-  .breeds button{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:5px 10px;border-radius:999px;cursor:pointer;font-size:.85rem}
-  .breeds button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-  h2{margin:16px;font-size:1.2rem;text-transform:capitalize}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:0 16px 30px}
-  .cell{position:relative;aspect-ratio:1;background:var(--card);border-radius:8px;overflow:hidden;cursor:pointer}
-  .cell img{width:100%;height:100%;object-fit:cover;display:block}
-  .cell .fetch{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 22px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 2px 10px #0006}
-  .cell.show .fetch{display:block}
-  .cell.show img{filter:brightness(.55)}
-  .cell.loading img{opacity:.4}
-  #msg{padding:20px;text-align:center;color:var(--muted)}
-</style>
-</head>
-<body>
-<header>
-  <h1>🐶 Dog API – Razas</h1>
-  <p>Elige una raza: se cargan 50 fotos. Haz clic en una foto y pulsa «Fetch!» para cambiarla por otra de la misma raza.</p>
-</header>
-<nav class="breeds" id="breeds"></nav>
-<h2 id="title"></h2>
-<div id="msg">Cargando razas…</div>
-<main class="grid" id="grid"></main>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Galería de perros</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-black via-slate-900 to-blue-950 bg-fixed">
+    <div id="root"></div>
 
-<script>
-const API = "https://dog.ceo/api";
-const $ = id => document.getElementById(id);
-let current = "";
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
 
-async function getJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(r.status);
-  return r.json();
-}
+      const API = "https://dog.ceo/api";
 
-async function init(){
-  try{
-    const {message} = await getJSON(API + "/breeds/list/all");
-    const list = [];
-    for(const [b, subs] of Object.entries(message)){
-      if(subs.length) subs.forEach(s => list.push({path: b + "/" + s, label: s + " " + b}));
-      else list.push({path: b, label: b});
-    }
-    $("breeds").innerHTML = "";
-    list.forEach(({path, label}) => {
-      const btn = document.createElement("button");
-      btn.textContent = label;
-      btn.onclick = () => selectBreed(path, label, btn);
-      $("breeds").appendChild(btn);
-    });
-    $("msg").textContent = "Selecciona una raza.";
-    const first = $("breeds").firstChild;
-    if(first) first.click();
-  }catch(e){ $("msg").textContent = "No se pudo cargar la lista de razas."; }
-}
+      const capitalizar = (texto) =>
+        texto.charAt(0).toUpperCase() + texto.slice(1);
 
-async function selectBreed(path, label, btn){
-  current = path;
-  document.querySelectorAll(".breeds button.on").forEach(b => b.classList.remove("on"));
-  btn.classList.add("on");
-  $("title").textContent = label;
-  $("grid").innerHTML = "";
-  $("msg").textContent = "Cargando imágenes…";
-  try{
-    const {message} = await getJSON(`${API}/breed/${path}/images/random/50`);
-    if(path !== current) return;
-    $("msg").textContent = "";
-    message.forEach(url => $("grid").appendChild(makeCell(url, path)));
-  }catch(e){ $("msg").textContent = "Error al cargar las imágenes."; }
-}
+      async function pedirImagenes(raza, cantidad, signal) {
+        const ruta = raza
+          ? `${API}/breed/${raza}/images/random/${cantidad}`
+          : `${API}/breeds/image/random/${cantidad}`;
+        const respuesta = await fetch(ruta, { signal });
+        const datos = await respuesta.json().catch(() => ({}));
+        if (!respuesta.ok || datos.status !== "success") {
+          throw new Error("Ups, no logramos traer las fotos. Inténtalo otra vez.");
+        }
+        return [...new Set(datos.message)];
+      }
 
-function makeCell(url, path){
-  const cell = document.createElement("div");
-  cell.className = "cell";
-  const img = document.createElement("img");
-  img.src = url; img.loading = "lazy"; img.alt = path;
-  const btn = document.createElement("button");
-  btn.className = "fetch"; btn.textContent = "Fetch!";
-  cell.append(img, btn);
+      function textoError(e) {
+        return e instanceof TypeError
+          ? "Parece que no hay internet. Revisa tu conexión."
+          : e.message;
+      }
 
-  cell.onclick = () => {
-    document.querySelectorAll(".cell.show").forEach(c => c !== cell && c.classList.remove("show"));
-    cell.classList.toggle("show");
-  };
-  btn.onclick = async e => {
-    e.stopPropagation();
-    cell.classList.add("loading");
-    try{
-      const {message} = await getJSON(`${API}/breed/${path}/images/random`);
-      img.src = message;
-      await img.decode().catch(() => {});
-    }catch(err){}
-    cell.classList.remove("loading","show");
-  };
-  return cell;
-}
+      function Mensaje({ tipo, texto, onReintentar }) {
+        if (tipo === "cargando") {
+          return (
+            <p role="status" className="rounded-lg bg-sky-50 px-4 py-3 text-center text-sky-800">
+              {texto}
+            </p>
+          );
+        }
+        return (
+          <div
+            role="alert"
+            className="flex flex-col items-center justify-center gap-3 text-center rounded-lg bg-red-50 px-4 py-3 text-red-800"
+          >
+            <span>{texto}</span>
+            <button
+              onClick={onReintentar}
+              className="rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+            >
+              Volver a intentar
+            </button>
+          </div>
+        );
+      }
 
-init();
-</script>
-</body>
+      function Filtro({ razas, valor, onCambio }) {
+        return (
+          <div className="flex items-center justify-center gap-3">
+            <label htmlFor="raza" className="font-medium text-slate-200">
+              Raza
+            </label>
+            <select
+              id="raza"
+              value={valor}
+              onChange={(e) => onCambio(e.target.value)}
+              className="rounded-lg border border-blue-500/50 bg-slate-900 px-3 py-2 text-white shadow-sm hover:border-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+            >
+              <option value="">Todas las razas</option>
+              {razas.map((raza) => (
+                <option key={raza} value={raza}>
+                  {capitalizar(raza)}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+
+      function Tarjeta({ src }) {
+        const raza = src.split("breeds/")[1].split("/")[0];
+        return (
+          <figure className="group overflow-hidden rounded-3xl bg-white shadow-lg shadow-black/40 ring-1 ring-white/10 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/40">
+            <img
+              src={src}
+              alt={`Perro de raza ${raza}`}
+              loading="lazy"
+              className="h-56 w-full object-cover transition duration-300 group-hover:scale-105"
+            />
+            <figcaption className="px-3 py-2 text-center text-sm font-semibold text-slate-800">
+              🐾 {capitalizar(raza)}
+            </figcaption>
+          </figure>
+        );
+      }
+
+      function Galeria({ imagenes }) {
+        return (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {imagenes.map((src) => (
+              <Tarjeta key={src} src={src} />
+            ))}
+          </div>
+        );
+      }
+
+      function App() {
+        const [imagenes, setImagenes] = useState([]);
+        const [razas, setRazas] = useState([]);
+        const [razaElegida, setRazaElegida] = useState("");
+        const [cargando, setCargando] = useState(false);
+        const [error, setError] = useState(null);
+        const [accion, setAccion] = useState("cargar");
+        const [intento, setIntento] = useState(0);
+        const razaActual = useRef(razaElegida);
+
+        razaActual.current = razaElegida;
+
+        useEffect(() => {
+          const controlador = new AbortController();
+          fetch(`${API}/breeds/list/all`, { signal: controlador.signal })
+            .then((r) => r.json())
+            .then((d) => setRazas(Object.keys(d.message).sort()))
+            .catch(() => {});
+          return () => controlador.abort();
+        }, []);
+
+        useEffect(() => {
+          const controlador = new AbortController();
+          setAccion("cargar");
+          setCargando(true);
+          setError(null);
+          pedirImagenes(razaElegida, 50, controlador.signal)
+            .then(setImagenes)
+            .catch((e) => {
+              if (controlador.signal.aborted) return;
+              setImagenes([]);
+              setError(textoError(e));
+            })
+            .finally(() => {
+              if (!controlador.signal.aborted) setCargando(false);
+            });
+          return () => controlador.abort();
+        }, [razaElegida, intento]);
+
+        async function traerMas() {
+          const raza = razaElegida;
+          setAccion("mas");
+          setCargando(true);
+          setError(null);
+          try {
+            const nuevas = await pedirImagenes(raza, 5);
+            if (razaActual.current !== raza) return;
+            setImagenes((previas) => [
+              ...previas,
+              ...nuevas.filter((url) => !previas.includes(url)),
+            ]);
+          } catch (e) {
+            if (razaActual.current !== raza) return;
+            setError(textoError(e));
+          } finally {
+            if (razaActual.current === raza) setCargando(false);
+          }
+        }
+
+        function reintentar() {
+          if (accion === "mas") traerMas();
+          else setIntento((n) => n + 1);
+        }
+
+        return (
+          <main className="mx-auto min-h-screen max-w-7xl space-y-5 px-4 py-8">
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-sky-300 to-blue-500 bg-clip-text text-center text-transparent">Galería de perros</h1>
+
+            <p className="text-center text-slate-300">Encuentra al perrito que más te guste</p>
+
+            <Filtro razas={razas} valor={razaElegida} onCambio={setRazaElegida} />
+
+            <p className="mx-auto block w-fit rounded-full bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-sky-200 shadow-sm ring-1 ring-sky-400/40">
+              Mostrando {imagenes.length} imágenes · Raza:{" "}
+              {razaElegida ? capitalizar(razaElegida) : "Todas"}
+            </p>
+
+            {cargando && <Mensaje tipo="cargando" texto="Buscando perritos, un momento..." />}
+            {error && <Mensaje tipo="error" texto={error} onReintentar={reintentar} />}
+
+            <Galeria imagenes={imagenes} />
+
+            <button
+              onClick={traerMas}
+              disabled={cargando}
+              className="mx-auto block rounded-full bg-gradient-to-r from-sky-500 to-blue-700 px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/40 transition hover:scale-105 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 disabled:scale-100 disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400 disabled:shadow-none"
+            >
+              Traer 5 imágenes
+            </button>
+          </main>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
 </html>
